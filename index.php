@@ -1,5 +1,6 @@
 <?php
-include ('header_for_natal.html');
+include('header_for_natal.html');
+include_once('config/dbconfig.php');
 
 Function safeEscapeString($string) {
 // replace HTML tags '<>' with '[]'
@@ -183,7 +184,7 @@ $my_error = "";
     $lat_min = $position["lat"]["min"];
     $ns = $position["lat"]["ns"];
 
-    include("validation_class.php");
+    include("lib/validation_class.php");
 
     //error check
     $my_form = new Validate_fields;
@@ -297,8 +298,8 @@ $my_error = "";
       $date_now = date ("Y-m-d");
 
       // calculate astronomic data
-      $swephsrc = './';
-      $sweph = './';
+      $swephsrc = './resources/ephemeris/';
+      $sweph = './resources/ephemeris/';
 
       // Unset any variables not initialized elsewhere in the program
       unset($PATH,$out,$pl_name,$longitude,$house_pos);
@@ -346,7 +347,7 @@ $my_error = "";
       putenv("PATH=$PATH:$swephsrc");
 
       // get 10 planets and all house cusps
-      exec ("swetest -edir$sweph -b$utdatenow -ut$utnow -p0123456789 -eswe -house$my_longitude,$my_latitude, -fPlj -g, -head", $out);
+      exec("swetest -edir$sweph -b$utdatenow -ut$utnow -p0123456789 -eswe -house$my_longitude,$my_latitude, -fPlj -g, -head", $out);
 
       // Each line of output data from swetest is exploded into array $row, giving these elements:
       // 0 = planet name
@@ -477,7 +478,8 @@ $my_error = "";
       //display philosophy of astrology
       echo "<center><font size='+1' color='#0000ff'><b>MY PHILOSOPHY OF ASTROLOGY</b></font></center>";
 
-      $file = "natal_files/philo.txt";
+      $base_dir = "resources/natal_files";
+      $file = "$base_dir/philo.txt";
       $fh = fopen($file, "r");
       $string = fread($fh, filesize($file));
       fclose($fh);
@@ -492,7 +494,7 @@ $my_error = "";
         //get header first
         echo "<center><font size='+1' color='#0000ff'><b>THE RISING SIGN OR ASCENDANT</b></font></center>";
 
-        $file = "natal_files/ascsign.txt";
+        $file = "$base_dir/ascsign.txt";
         $fh = fopen($file, "r");
         $string = fread($fh, filesize($file));
         fclose($fh);
@@ -503,7 +505,7 @@ $my_error = "";
 
         $s_pos = floor($longitude[10] / 30) + 1;
         $phrase_to_look_for = $sign_name[$s_pos] . " rising";
-        $file = "natal_files/rising.txt";
+        $file = "$base_dir/rising.txt";
         $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
         $string = nl2br($string);
 
@@ -514,7 +516,7 @@ $my_error = "";
       //get header first
       echo "<center><font size='+1' color='#0000ff'><b>SIGN POSITIONS OF PLANETS</b></font></center>";
 
-      $file = "natal_files/sign.txt";
+      $file = "$base_dir/sign.txt";
       $fh = fopen($file, "r");
       $string = fread($fh, filesize($file));
       fclose($fh);
@@ -533,7 +535,7 @@ $my_error = "";
           continue;			//if the Moon is too close to the beginning or the end of a sign, then do not include it
         }
         $phrase_to_look_for = $pl_name[$i] . " in";
-        $file = "natal_files/sign_" . trim($s_pos) . ".txt";
+        $file = "$base_dir/sign_" . trim($s_pos) . ".txt";
         $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
         $string = nl2br($string);
         $sign_interp .= $string;
@@ -548,7 +550,7 @@ $my_error = "";
         //get header first
         echo "<center><font size='+1' color='#0000ff'><b>HOUSE POSITIONS OF PLANETS</b></font></center>";
 
-        $file = "natal_files/house.txt";
+        $file = "$base_dir/house.txt";
         $fh = fopen($file, "r");
         $string = fread($fh, filesize($file));
         fclose($fh);
@@ -561,7 +563,7 @@ $my_error = "";
         {
           $h_pos = $house_pos[$i];
           $phrase_to_look_for = $pl_name[$i] . " in";
-          $file = "natal_files/house_" . trim($h_pos) . ".txt";
+          $file = "$base_dir/house_" . trim($h_pos) . ".txt";
           $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
           $string = nl2br($string);
           $house_interp .= $string;
@@ -575,7 +577,7 @@ $my_error = "";
       //get header first
       echo "<center><font size='+1' color='#0000ff'><b>PLANETARY ASPECTS</b></font></center>";
 
-      $file = "natal_files/aspect.txt";
+      $file = "$base_dir/aspect.txt";
       $fh = fopen($file, "r");
       $string = fread($fh, filesize($file));
       fclose($fh);
@@ -650,7 +652,7 @@ $my_error = "";
             }
 
             $phrase_to_look_for = $pl_name[$i] . $aspect . $pl_name[$j];
-            $file = "natal_files/" . strtolower($pl_name[$i]) . ".txt";
+            $file = "$base_dir/" . strtolower($pl_name[$i]) . ".txt";
             $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
             $string = nl2br($string);
             echo "<font size=2>" . $string . "</font>";
@@ -664,11 +666,11 @@ $my_error = "";
 
       if ($unknown_time == 1)
       {
-        $file = "natal_files/closing_unk.txt";
+        $file = "$base_dir/closing_unk.txt";
       }
       else
       {
-        $file = "natal_files/closing.txt";
+        $file = "$base_dir/closing.txt";
       }
       $fh = fopen($file, "r");
       $string = fread($fh, filesize($file));
@@ -681,12 +683,6 @@ $my_error = "";
       echo '</table></center>';
 
       $retrograde = "          ";
-
-      echo "<center>";
-      echo "<img border='0' src='chartwheel.php?in_test=0&rx=$retrograde&p0=$longitude[0]&p1=$longitude[1]&p2=$longitude[2]&p3=$longitude[3]&p4=$longitude[4]&p5=$longitude[5]&p6=$longitude[6]&p7=$longitude[7]&p8=$longitude[8]&p9=$longitude[9]' width='640' height='640'>";
-      echo "</center>";
-
-      echo "<br><br>";
 
       //display natal data
       echo '<center><table width="50%" cellpadding="0" cellspacing="0" border="0">',"\n";
@@ -884,7 +880,15 @@ $my_error = "";
       <td>
         <select name="country">
           <option value="" selected>Select country</option>
-          <option value="AR">Argentina</option>
+          <?php
+            $stmt = $DB_con->prepare("SELECT * FROM country");
+            $stmt->execute();
+            while ($row=$stmt->fetch(PDO::FETCH_ASSOC)) {
+          ?>
+          <option value="<?php echo $row['Code']; ?>"><?php echo $row['Name']; ?></option>
+          <?php
+            } 
+          ?>
         </select>
       </td>
     </TR>
