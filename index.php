@@ -1,8 +1,7 @@
 <?php
 include ('header_for_natal.html');
 
-Function safeEscapeString($string)
-{
+Function safeEscapeString($string) {
 // replace HTML tags '<>' with '[]'
   $temp1 = str_replace("<", "[", $string);
   $temp2 = str_replace(">", "]", $temp1);
@@ -23,13 +22,11 @@ Function safeEscapeString($string)
   }
 }
 
-Function left($leftstring, $leftlength)
-{
+Function left($leftstring, $leftlength) {
   return(substr($leftstring, 0, $leftlength));
 }
 
-Function Reduce_below_30($longitude)
-{
+Function Reduce_below_30($longitude) {
   $lng = $longitude;
 
   while ($lng >= 30)
@@ -40,8 +37,7 @@ Function Reduce_below_30($longitude)
   return $lng;
 }
 
-Function Convert_Longitude($longitude)
-{
+Function Convert_Longitude($longitude) {
   $signs = array (0 => 'Ari', 'Tau', 'Gem', 'Can', 'Leo', 'Vir', 'Lib', 'Sco', 'Sag', 'Cap', 'Aqu', 'Pis');
 
   $sign_num = floor($longitude / 30);
@@ -69,8 +65,7 @@ Function Convert_Longitude($longitude)
   return $deg . " " . $signs[$sign_num] . " " . $min . "' " . $full_sec . chr(34);
 }
 
-Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
-{
+Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file) {
   $string = "";
   $len = strlen($phrase_to_look_for);
 
@@ -103,12 +98,65 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
   return $string;
 }
 
-  $months = array (0 => 'Choose month', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
-  $my_error = "";
+// Gets the GeoPosition of the city usign Google's Geocode API
+Function Get_Geo_Position($city, $state, $country) {
+  $address = $city . ',' . $state . ',' . $country;
+    $url = "http://maps.google.com/maps/api/geocode/json?&address=".urlencode($address);
+
+    $json = file_get_contents($url);
+
+    $data = json_decode($json, TRUE);
+
+    if($data['status']=="OK") {
+      $location = Rec_Find($data['results'], "location");
+      $position = array(
+        "lat" => Get_Latitude($location),
+        "lng" => Get_Longitude($location)
+      );
+      return $position;
+    }
+
+}
+
+// Recursive function to find a value by a given key on a multidimensional array
+Function Rec_Find($array, $key_element) {
+  foreach ($array as $key => $value) {
+    if (strcmp($key_element, $key) == 0) {
+      return $value;
+    } elseif (is_array($value)) {
+      $result = Rec_Find($value, $key_element);
+      if ($result !== null) {
+          return $result;
+      }
+    }
+  }
+}
+
+// Returns a map with the latitude information (degrees, minutes, N/S) given the location returned by the Geocode API
+Function Get_Latitude($location) {
+  $n = abs((int) $location["lat"]);
+  return array(
+    "deg" => $n,
+    "min" => (int) ((abs($location["lat"]) - $n) * 60),
+    "ns" => $location["lat"] > 0 ? 1 : -1
+  );
+}
+
+// Returns a map with the longitude information (degrees, minutes, E/W) given the location returned by the Geocode API
+Function Get_Longitude($location) {
+  $n = abs((int) $location["lng"]);
+  return array(
+    "deg" => $n,
+    "min" => (int) ((abs($location["lng"]) - $n) * 60),
+    "ew" => $location["lng"] > 0 ? 1 : -1
+  );
+}
+
+$months = array (0 => 'Choose month', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
+$my_error = "";
 
   // check if the form has been submitted
-  if (isset($_POST['submitted']))
-  {
+  if (isset($_POST['submitted']))   {
     // get all variables from form
     $name = safeEscapeString($_POST["name"]);
 
@@ -121,13 +169,19 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
 
     $timezone = safeEscapeString($_POST["timezone"]);
 
-    $long_deg = safeEscapeString($_POST["long_deg"]);
-    $long_min = safeEscapeString($_POST["long_min"]);
-    $ew = safeEscapeString($_POST["ew"]);
+    $country = safeEscapeString($_POST["country"]);
+    $state = safeEscapeString($_POST["state"]);
+    $city = safeEscapeString($_POST["city"]);
+    
+    $position = Get_Geo_Position($city, $state, $country);
 
-    $lat_deg = safeEscapeString($_POST["lat_deg"]);
-    $lat_min = safeEscapeString($_POST["lat_min"]);
-    $ns = safeEscapeString($_POST["ns"]);
+    $long_deg = $position["lng"]["deg"];
+    $long_min = $position["lng"]["min"];
+    $ew = $position["lng"]["ew"];
+
+    $lat_deg = $position["lat"]["deg"];
+    $lat_min = $position["lat"]["min"];
+    $ns = $position["lat"]["ns"];
 
     include("validation_class.php");
 
@@ -146,6 +200,10 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
     $my_form->add_text_field("Minute", $minute, "text", "y", 2);
 
     $my_form->add_text_field("Time zone", $timezone, "text", "y", 4);
+
+    $my_form->add_text_field("Country", $country, "text", "y", 4);
+    $my_form->add_text_field("State", $state, "text", "y", 4);
+    $my_form->add_text_field("City", $city, "text", "y");
 
     $my_form->add_text_field("Longitude degree", $long_deg, "text", "y", 3);
     $my_form->add_text_field("Longitude minute", $long_min, "text", "y", 2);
@@ -822,6 +880,36 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
     </TR>
 
     <TR>
+      <td valign="top"><P align="right">Country:</P></td>
+      <td>
+        <select name="country">
+          <option value="" selected>Select country</option>
+          <option value="AR">Argentina</option>
+        </select>
+      </td>
+    </TR>
+
+    <TR>
+      <td valign="top"><P align="right">state/Region:</P></td>
+      <td>
+        <select name="state">
+          <option value="" selected>Select state</option>
+          <option value="BA">Buenos Aires</option>
+        </select>
+      </td>
+    </TR>
+
+    <TR>
+      <td valign="top"><P align="right">City:</P></td>
+      <td>
+        <select name="city">
+          <option value="" selected>Select city</option>
+          <option value="almagro">Almagro</option>
+        </select>
+      </td>
+    </TR>
+
+    <TR>
       <td valign="top"><P align="right">Time zone:</P></td>
 
       <TD>
@@ -877,7 +965,7 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
       </TD>
     </TR>
 
-    <TR>
+    <TR style="display:none;">
       <td valign="top"><P align="right">Longitude:</P></td>
       <TD>
         <INPUT maxlength="3" size="3" name="long_deg" value="<?php echo $_POST['long_deg']; ?>">
@@ -909,7 +997,7 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file)
       </TD>
     </TR>
 
-    <TR>
+    <TR style="display:none;">
       <td valign="top"><P align="right">Latitude:</P></td>
 
       <TD>
