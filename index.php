@@ -1,6 +1,5 @@
 <?php
 include('header_for_natal.html');
-include_once('config/dbconfig.php');
 
 Function safeEscapeString($string) {
 // replace HTML tags '<>' with '[]'
@@ -101,22 +100,25 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file) {
 
 // Gets the GeoPosition of the city usign Google's Geocode API
 Function Get_Geo_Position($city, $state, $country) {
+  $city = split(':', $city)[1];
+  $state = split(':', $state)[1];
+  $country = split(':', $country)[1];
+
   $address = $city . ',' . $state . ',' . $country;
-    $url = "http://maps.google.com/maps/api/geocode/json?&address=".urlencode($address);
+  $url = "http://maps.google.com/maps/api/geocode/json?&address=".urlencode($address);
 
-    $json = file_get_contents($url);
+  $json = file_get_contents($url);
 
-    $data = json_decode($json, TRUE);
+  $data = json_decode($json, TRUE);
 
-    if($data['status']=="OK") {
-      $location = Rec_Find($data['results'], "location");
-      $position = array(
-        "lat" => Get_Latitude($location),
-        "lng" => Get_Longitude($location)
-      );
-      return $position;
-    }
-
+  if($data['status']=="OK") {
+    $location = Rec_Find($data['results'], "location");
+    $position = array(
+      "lat" => Get_Latitude($location),
+      "lng" => Get_Longitude($location)
+    );
+    return $position;
+  }
 }
 
 // Recursive function to find a value by a given key on a multidimensional array
@@ -153,7 +155,7 @@ Function Get_Longitude($location) {
   );
 }
 
-$months = array (0 => 'Choose month', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
+$months = array (0 => 'Seleccione el mes', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre');
 $my_error = "";
 
   // check if the form has been submitted
@@ -202,8 +204,8 @@ $my_error = "";
 
     $my_form->add_text_field("Time zone", $timezone, "text", "y", 4);
 
-    $my_form->add_text_field("Country", $country, "text", "y", 4);
-    $my_form->add_text_field("State", $state, "text", "y", 4);
+    $my_form->add_text_field("Country", $country, "text", "y");
+    $my_form->add_text_field("State", $state, "text", "y");
     $my_form->add_text_field("City", $city, "text", "y");
 
     $my_form->add_text_field("Longitude degree", $long_deg, "text", "y", 3);
@@ -816,7 +818,7 @@ $my_error = "";
 
     <TR>
       <TD>
-        <P align="right">Birth date:</P>
+        <P align="right">Fecha de Nacimiento:</P>
       </TD>
 
       <TD>
@@ -844,7 +846,7 @@ $my_error = "";
     </TR>
 
     <TR>
-      <td valign="top"><P align="right">Birth time:</P></td>
+      <td valign="top"><P align="right">Horario de Nacimiento:</P></td>
       <TD>
         <INPUT maxlength="2" size="2" name="hour" value="<?php echo $_POST['hour']; ?>">
         <b>:</b>
@@ -866,49 +868,34 @@ $my_error = "";
         <b>IMPORTANT</b>
         </font></P>
       </td>
-
-      <td>
-        <font color="#ff0000">
-        <b>NOTICE:</b>
-        </font>
-        <b>&nbsp;&nbsp;West longitudes are MINUS time zones.&nbsp;&nbsp;East longitudes are PLUS time zones.</b>
-      </td>
     </TR>
 
     <TR>
-      <td valign="top"><P align="right">Country:</P></td>
+      <td valign="top"><P align="right">Pais:</P></td>
       <td>
-        <select name="country">
-          <option value="" selected>Select country</option>
+        <select class="country" name="country">
+          <option value="" selected>Seleccione el pais</option>
           <?php
-            $stmt = $DB_con->prepare("SELECT * FROM country");
-            $stmt->execute();
-            while ($row=$stmt->fetch(PDO::FETCH_ASSOC)) {
-          ?>
-          <option value="<?php echo $row['Code']; ?>"><?php echo $row['Name']; ?></option>
-          <?php
-            } 
+            require('lib/get_countries.php');
           ?>
         </select>
       </td>
     </TR>
 
     <TR>
-      <td valign="top"><P align="right">state/Region:</P></td>
+      <td valign="top"><P align="right">Estado/Provincia:</P></td>
       <td>
-        <select name="state">
-          <option value="" selected>Select state</option>
-          <option value="BA">Buenos Aires</option>
+        <select class="state" name="state">
+          <option value="" selected>Seleccione el estado/provincia</option>
         </select>
       </td>
     </TR>
 
     <TR>
-      <td valign="top"><P align="right">City:</P></td>
+      <td valign="top"><P align="right">Ciudad:</P></td>
       <td>
-        <select name="city">
-          <option value="" selected>Select city</option>
-          <option value="almagro">Almagro</option>
+        <select class="city" name="city">
+          <option value="" selected>Seleccione la ciudad</option>
         </select>
       </td>
     </TR>
@@ -1048,5 +1035,4 @@ $my_error = "";
 </form>
 
 <?php
-include ('footer_data_entry.html');
 ?>
