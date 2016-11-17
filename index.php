@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
   <title>Astrological Natal Reports by Allen Edwall</title>
   <meta name="description" content="Free natal horoscope report/interpretation">
   <meta name="keywords" content="astrology, natal horoscopes, natal chart interpretation, transits, right now, planet positions, daily transits">
@@ -16,6 +16,8 @@
 
 <body>
 <?php
+header('Content-Type: text/html; charset=UTF-8');
+
 function get_sign_name($sign_pos) {
   $sign_name[1] = "Aries";
   $sign_name[2] = "Tauro";
@@ -486,12 +488,14 @@ $my_error = "";
         $tz = "+" . $timezone;
       }
 
-      $year_prefix = ($year >= 2000 ? '20' : '19');
+      setlocale(LC_ALL, 'es_AR.UTF-8');
       if ($unknown_time) {
-        echo strftime("%A, %B %d, $year_prefix%y</b><br /><br /><br />\n", mktime(0, 0, 0, $month, $day, $year));
+        $birth_info_str = strftime("%A, %d de %B de %Y<br/>", mktime(0, 0, 0, $month, $day, $year));
       } else {
-        echo strftime("%A, %B %d, $year_prefix%y at %X (GMT $tz)</b><br /><br /><br />\n", mktime($hour, $minute, $secs, $month, $day, $year));
+        $birth_info_str = strftime("%A, %d de %B de %Y a las %H:%M (GMT $tz)<br/>", mktime($hour, $minute, $secs, $month, $day, $year));
       }
+
+      echo mb_convert_encoding($birth_info_str, 'ISO-8859-1');
 
       echo "</center>";
 
