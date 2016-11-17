@@ -1,7 +1,39 @@
-<?php
-include('header_for_natal.html');
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Astrological Natal Reports by Allen Edwall</title>
+  <meta name="description" content="Free natal horoscope report/interpretation">
+  <meta name="keywords" content="astrology, natal horoscopes, natal chart interpretation, transits, right now, planet positions, daily transits">
+  <!--
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  -->
+  <script type="text/javascript" src="assets/js/jquery.min.js"></script>
+  <script type="text/javascript" src="assets/js/index.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+  <link rel="stylesheet" href="styles/styles.css">  
+</head>
 
-Function safeEscapeString($string) {
+<body>
+<?php
+function get_sign_name($sign_pos) {
+  $sign_name[1] = "Aries";
+  $sign_name[2] = "Tauro";
+  $sign_name[3] = "Géminis";
+  $sign_name[4] = "Cáncer";
+  $sign_name[5] = "Leo";
+  $sign_name[6] = "Virgo";
+  $sign_name[7] = "Libra";
+  $sign_name[8] = "Escorpio";
+  $sign_name[9] = "Sagitario";
+  $sign_name[10] = "Capricornio";
+  $sign_name[11] = "Acuario";
+  $sign_name[12] = "Piscis";
+  
+  return $sign_name[$sign_pos];
+}
+
+function safeEscapeString($string) {
 // replace HTML tags '<>' with '[]'
   $temp1 = str_replace("<", "[", $string);
   $temp2 = str_replace(">", "]", $temp1);
@@ -12,21 +44,18 @@ Function safeEscapeString($string) {
   $temp1 = str_replace("[br]", "<br />", $temp2);
   $temp2 = str_replace("[br /]", "<br />", $temp1);
 
-  if (get_magic_quotes_gpc())
-  {
+  if (get_magic_quotes_gpc()) {
     return $temp2;
-  }
-  else
-  {
+  } else {
     return mysql_escape_string($temp2);
   }
 }
 
-Function left($leftstring, $leftlength) {
+function left($leftstring, $leftlength) {
   return(substr($leftstring, 0, $leftlength));
 }
 
-Function Reduce_below_30($longitude) {
+function Reduce_below_30($longitude) {
   $lng = $longitude;
 
   while ($lng >= 30)
@@ -37,7 +66,8 @@ Function Reduce_below_30($longitude) {
   return $lng;
 }
 
-Function Convert_Longitude($longitude) {
+/*
+function Convert_Longitude($longitude) {
   $signs = array (0 => 'Ari', 'Tau', 'Gem', 'Can', 'Leo', 'Vir', 'Lib', 'Sco', 'Sag', 'Cap', 'Aqu', 'Pis');
 
   $sign_num = floor($longitude / 30);
@@ -64,11 +94,15 @@ Function Convert_Longitude($longitude) {
 
   return $deg . " " . $signs[$sign_num] . " " . $min . "' " . $full_sec . chr(34);
 }
+*/
 
-Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file) {
+function longitude_to_sign($longitude) {
+  return floor($longitude / 30) + 1;
+}
+
+function Find_Specific_Report_Paragraph($phrase_to_look_for, $file) {
   $string = "";
   $len = strlen($phrase_to_look_for);
-
   //put entire file contents into an array, line by line
   $file_array = file($file);
 
@@ -78,6 +112,8 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file) {
     if (left(trim($file_array[$i]), $len) == $phrase_to_look_for)
     {
       $flag = 0;
+      // don't include the phrase to find in the returned string
+      $i++; 
       while (trim($file_array[$i]) != "*")
       {
         if ($flag == 0)
@@ -98,8 +134,40 @@ Function Find_Specific_Report_Paragraph($phrase_to_look_for, $file) {
   return $string;
 }
 
+function previous_sign($sign) {
+  return ($sign == 1 ? 12 : $sign-1);
+}
+
+function next_sign($sign) {
+  return ($sign == 12 ? 1 : $sign+1);
+}
+
+function read_from_file($file, $phrase_to_look_for) {
+  $fh = fopen($file, "r");
+  if ($phrase_to_look_for) {
+    $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
+  } else {
+    $string = fread($fh, filesize($file));
+  }
+
+  fclose($fh);
+  return mb_convert_encoding(nl2br($string), 'ISO-8859-1');
+}
+
+// Returns an array with the signs the moon was on at the begining and at the end of a time range
+function moon_signs_for_unknown_time($moon_start, $moon_end) {
+  $sign_start = get_sign_name(longitude_to_sign(explode(',', $moon_start)[1]));
+  $sign_end = get_sign_name(longitude_to_sign(explode(',', $moon_end)[1]));
+
+  $moon_signs = [$sign_start];
+  if(!in_array($sign_end, $moon_signs)) array_push($moon_signs, $sign_end);
+
+  return $moon_signs;
+}
+
 // Gets the GeoPosition of the city usign Google's Geocode API
-Function Get_Geo_Position($city, $state, $country) {
+function Get_Geo_Position($city, $state, $country) {
+  //return array("lat" => -34, "lng" => -58);
   $city = split(':', $city)[1];
   $state = split(':', $state)[1];
   $country = split(':', $country)[1];
@@ -112,13 +180,10 @@ Function Get_Geo_Position($city, $state, $country) {
   $data = json_decode($json, TRUE);
 
   if($data['status']=="OK") {
-    $location = Rec_Find($data['results'], "location");
-    $position = array(
-      "lat" => Get_Latitude($location),
-      "lng" => Get_Longitude($location)
-    );
-    return $position;
+    return Rec_Find($data['results'], "location");
   }
+  /*
+  */
 }
 
 // Recursive function to find a value by a given key on a multidimensional array
@@ -135,37 +200,27 @@ Function Rec_Find($array, $key_element) {
   }
 }
 
-// Returns a map with the latitude information (degrees, minutes, N/S) given the location returned by the Geocode API
-Function Get_Latitude($location) {
-  $n = abs((int) $location["lat"]);
-  return array(
-    "deg" => $n,
-    "min" => (int) ((abs($location["lat"]) - $n) * 60),
-    "ns" => $location["lat"] > 0 ? 1 : -1
-  );
-}
-
-// Returns a map with the longitude information (degrees, minutes, E/W) given the location returned by the Geocode API
-Function Get_Longitude($location) {
-  $n = abs((int) $location["lng"]);
-  return array(
-    "deg" => $n,
-    "min" => (int) ((abs($location["lng"]) - $n) * 60),
-    "ew" => $location["lng"] > 0 ? 1 : -1
-  );
-}
-
-$months = array (0 => 'Seleccione el mes', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre');
+$months = array(0 => 'Seleccione el mes', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre');
+$timeWindows = array(1 => array(name => 'Madrugada', start => '00:00', end => '06:00'),
+  2 => array(name => 'Mañana', start => '06:00', end => '12:00'),
+  3 => array(name => 'Tarde', start => '12:00', end => '18:00'),
+  4 => array(name => 'Noche', start => '18:00', end => '24:00'));
 $my_error = "";
 
   // check if the form has been submitted
-  if (isset($_POST['submitted']))   {
+  if (isset($_POST['submitted'])) {
+    header('Content-Type: text/html; charset=ISO-8859-1');
+
     // get all variables from form
     $name = safeEscapeString($_POST["name"]);
+    $gender = safeEscapeString($_POST["gender"]);
 
     $month = safeEscapeString($_POST["month"]);
     $day = safeEscapeString($_POST["day"]);
     $year = safeEscapeString($_POST["year"]);
+
+    $unknown_time = isset($_POST["unknown-time"]);
+    $time_range = safeEscapeString($_POST["time-window"]);
 
     $hour = safeEscapeString($_POST["hour"]);
     $minute = safeEscapeString($_POST["minute"]);
@@ -178,13 +233,8 @@ $my_error = "";
     
     $position = Get_Geo_Position($city, $state, $country);
 
-    $long_deg = $position["lng"]["deg"];
-    $long_min = $position["lng"]["min"];
-    $ew = $position["lng"]["ew"];
-
-    $lat_deg = $position["lat"]["deg"];
-    $lat_min = $position["lat"]["min"];
-    $ns = $position["lat"]["ns"];
+    $lat = $position["lat"];
+    $lng = $position["lng"];
 
     include("lib/validation_class.php");
 
@@ -193,81 +243,59 @@ $my_error = "";
 
     $my_form->check_4html = true;
 
-    $my_form->add_text_field("Name", $name, "text", "y", 40);
+    $my_form->add_text_field("Name", $name, "text", true, 40);
+    $my_form->add_text_field("Gender", $gender, "text", true);
 
-    $my_form->add_text_field("Month", $month, "text", "y", 2);
-    $my_form->add_text_field("Day", $day, "text", "y", 2);
-    $my_form->add_text_field("Year", $year, "text", "y", 4);
+    $my_form->add_text_field("Month", $month, "text", true, 2);
+    $my_form->add_text_field("Day", $day, "text", true, 2);
+    $my_form->add_text_field("Year", $year, "text", true, 4);
 
-    $my_form->add_text_field("Hour", $hour, "text", "y", 2);
-    $my_form->add_text_field("Minute", $minute, "text", "y", 2);
+    $my_form->add_text_field("Hour", $hour, "text", !$unknown_time, 2);
+    $my_form->add_text_field("Minute", $minute, "text", !$unknown_time, 2);
+    $my_form->add_text_field("Time range", $time_range, "text", $unknown_time);
 
-    $my_form->add_text_field("Time zone", $timezone, "text", "y", 4);
+    $my_form->add_text_field("Time zone", $timezone, "text", true, 4);
 
-    $my_form->add_text_field("Country", $country, "text", "y");
-    $my_form->add_text_field("State", $state, "text", "y");
-    $my_form->add_text_field("City", $city, "text", "y");
-
-    $my_form->add_text_field("Longitude degree", $long_deg, "text", "y", 3);
-    $my_form->add_text_field("Longitude minute", $long_min, "text", "y", 2);
-    $my_form->add_text_field("Longitude E/W", $ew, "text", "y", 2);
-
-    $my_form->add_text_field("Latitude degree", $lat_deg, "text", "y", 2);
-    $my_form->add_text_field("Latitude minute", $lat_min, "text", "y", 2);
-    $my_form->add_text_field("Latitude N/S", $ns, "text", "y", 2);
+    $my_form->add_text_field("Country", $country, "text", true);
+    $my_form->add_text_field("State", $state, "text", true);
+    $my_form->add_text_field("City", $city, "text", true);
 
     // additional error checks on user-entered data
+    if ($gender != "male" and $gender != "female") {
+      $my_error .= "Por favor seleccione su género.";
+    }
+
     if ($month != "" And $day != "" And $year != "")
     {
       if (!$date = checkdate(settype ($month, "integer"), settype ($day, "integer"), settype ($year, "integer")))
       {
-        $my_error .= "The date of birth you entered is not valid.<br>";
+        $my_error .= "La fecha de nacimiento ingresada no es válida.";
       }
     }
 
     if (($year < 1900) Or ($year >= 2100))
     {
-      $my_error .= "Please enter a year between 1900 and 2099.<br>";
+      $my_error .= "Por favor ingrese un año entre 1900 y 2099.";
     }
 
     if (($hour < 0) Or ($hour > 23))
     {
-      $my_error .= "Birth hour must be between 0 and 23.<br>";
+      $my_error .= "La hora de nacimiento debe ser entre 0 y 23.";
     }
 
     if (($minute < 0) Or ($minute > 59))
     {
-      $my_error .= "Birth minute must be between 0 and 59.<br>";
+      $my_error .= "Los minutos de nacimiento deben ser entre 0 y 59.";
     }
 
-    if (($long_deg < 0) Or ($long_deg > 179))
+    if (($lng < -180) Or ($lng > 180))
     {
-      $my_error .= "Longitude degrees must be between 0 and 179.<br>";
+      $my_error .= "Longitude degrees must be between -180 and 180.";
     }
 
-    if (($long_min < 0) Or ($long_min > 59))
+    if (($lat < -90) Or ($lat > 90))
     {
-      $my_error .= "Longitude minutes must be between 0 and 59.<br>";
-    }
-
-    if (($lat_deg < 0) Or ($lat_deg > 65))
-    {
-      $my_error .= "Latitude degrees must be between 0 and 65.<br>";
-    }
-
-    if (($lat_min < 0) Or ($lat_min > 59))
-    {
-      $my_error .= "Latitude minutes must be between 0 and 59.<br>";
-    }
-
-    if (($ew == '-1') And ($timezone > 2))
-    {
-      $my_error .= "You have marked West longitude but set an east time zone.<br>";
-    }
-
-    if (($ew == '1') And ($timezone < 0))
-    {
-      $my_error .= "You have marked East longitude but set a west time zone.<br>";
+      $my_error .= "Latitude degrees must be between -90 and 90.";
     }
 
     $validation_error = $my_form->validation();
@@ -275,8 +303,8 @@ $my_error = "";
     if ((!$validation_error) || ($my_error != ""))
     {
       $error = $my_form->create_msg();
-      echo "<TABLE align='center' WIDTH='98%' BORDER='0' CELLSPACING='15' CELLPADDING='0'><tr><td><center><b>";
-      echo "<font color='#ff0000' size=+2>Error! - The following error(s) occurred:</font><br>";
+      echo "<table align='center' WIDTH='98%' BORDER='0' CELLSPACING='15' CELLPADDING='0'><tr><td><center><b>";
+      echo "<h3>Error! - The following error(s) occurred:</h3><br>";
 
       if ($error)
       {
@@ -284,13 +312,9 @@ $my_error = "";
       }
       else
       {
-        echo $error . "<br>" . $my_error;
+        echo $error . "<br>" . $my_error . "<br>";
       }
 
-      echo "</font>";
-      echo "<font color='#c020c0'";
-      echo "<br>PLEASE RE-ENTER YOUR TIME ZONE DATA. THANK YOU.<br><br>";
-      echo "</font>";
       echo "</b></center></td></tr></table>";
     }
     else
@@ -304,7 +328,7 @@ $my_error = "";
       $sweph = './resources/ephemeris/';
 
       // Unset any variables not initialized elsewhere in the program
-      unset($PATH,$out,$pl_name,$longitude,$house_pos);
+      unset($PATH,$out,$pl_names,$longitude,$house_pos);
 
       //assign data from database to local variables
       $inmonth = $month;
@@ -317,8 +341,9 @@ $my_error = "";
 
       $intz = $timezone;
 
-      $my_longitude = $ew * ($long_deg + ($long_min / 60));
-      $my_latitude = $ns * ($lat_deg + ($lat_min / 60));
+
+      $my_longitude = $lng;
+      $my_latitude = $lat;
 
       if ($intz >= 0)
       {
@@ -349,19 +374,64 @@ $my_error = "";
       putenv("PATH=$PATH:$swephsrc");
 
       // get 10 planets and all house cusps
+      /*
+      original call to swetest before script modifications
       exec("swetest -edir$sweph -b$utdatenow -ut$utnow -p0123456789 -eswe -house$my_longitude,$my_latitude, -fPlj -g, -head", $out);
+      */
+      if ($unknown_time) {
+        exec("swetest -edir$sweph -b$utdatenow -ut$utnow -p01 -eswe -fPlj -g, -head", $out);
+
+        $start_time = $timeWindows[$time_range]["start"];
+        $end_time = $timeWindows[$time_range]["end"];
+
+        exec("swetest -edir$sweph -b$utdatenow -ut$start_time -p1 -eswe -fPlj -g, -head", $moon_start);
+        exec("swetest -edir$sweph -b$utdatenow -ut$end_time -p1 -eswe -fPlj -g, -head", $moon_end);
+
+        $moon_signs = moon_signs_for_unknown_time($moon_start[0], $moon_end[0]);
+      } else {
+        exec("swetest -edir$sweph -b$utdatenow -ut$utnow -p01 -eswe -house$my_longitude,$my_latitude, -fPlj -g, -head", $out);
+      }
 
       // Each line of output data from swetest is exploded into array $row, giving these elements:
       // 0 = planet name
       // 1 = longitude
       // 2 = house position
       // planets are index 0 - index 9, house cusps are index 10 - 21
+      $pl_names = ['Sun', 'Moon', 'Ascendant'];
+
+      /*
+      $pl_names[0] = "Sun";
+      $pl_names[1] = "Moon";
+      $pl_names[2] = "Mercury";
+      $pl_names[3] = "Venus";
+      $pl_names[4] = "Mars";
+      $pl_names[5] = "Jupiter";
+      $pl_names[6] = "Saturn";
+      $pl_names[7] = "Uranus";
+      $pl_names[8] = "Neptune";
+      $pl_names[9] = "Pluto";
+      $pl_names[10] = "Ascendant";
+      $pl_names[11] = "House 2";
+      $pl_names[12] = "House 3";
+      $pl_names[13] = "House 4";
+      $pl_names[14] = "House 5";
+      $pl_names[15] = "House 6";
+      $pl_names[16] = "House 7";
+      $pl_names[17] = "House 8";
+      $pl_names[18] = "House 9";
+      $pl_names[19] = "MC (Midheaven)";
+      $pl_names[20] = "House 11";
+      $pl_names[21] = "House 12";
+      */
+
+      $planets = [];
       foreach ($out as $key => $line)
       {
-        $row = explode(',',$line);
-        $pl_name[$key] = $row[0];
-        $longitude[$key] = $row[1];
-        $house_pos[$key] = $row[3];
+        $row = explode(',', $line);
+        if (in_array(trim($row[0]), $pl_names)) {
+          $planet_name = trim($row[0]);
+          $planets[$planet_name] = array("longitude" => $row[1]);
+        }
       };
 
       //get house positions of planets here
@@ -406,147 +476,73 @@ $my_error = "";
 
       $existing_name = $name;
 
-      echo "<FONT color='#ff0000' SIZE='5' FACE='Arial'><b>Name = $existing_name </b></font><br /><br />";
+      echo "<h1>Reporte astrológico para: $existing_name</h1>";
 
       $secs = "0";
       if ($timezone < 0)
       {
         $tz = $timezone;
-      }
-      else
-      {
+      } else {
         $tz = "+" . $timezone;
       }
 
-      if ($year >= 2000)
-      {
-        echo '<b>Data for ' . strftime("%A, %B %d, 20%y at %X (time zone = GMT $tz hours)</b><br /><br /><br />\n", mktime($hour, $minute, $secs, $month, $day, $year));
-      }
-      else
-      {
-        echo '<b>Data for ' . strftime("%A, %B %d, 19%y at %X (time zone = GMT $tz hours)</b><br /><br /><br />\n", mktime($hour, $minute, $secs, $month, $day, $year));
+      $year_prefix = ($year >= 2000 ? '20' : '19');
+      if ($unknown_time) {
+        echo strftime("%A, %B %d, $year_prefix%y</b><br /><br /><br />\n", mktime(0, 0, 0, $month, $day, $year));
+      } else {
+        echo strftime("%A, %B %d, $year_prefix%y at %X (GMT $tz)</b><br /><br /><br />\n", mktime($hour, $minute, $secs, $month, $day, $year));
       }
 
       echo "</center>";
 
-      $pl_name[0] = "Sun";
-      $pl_name[1] = "Moon";
-      $pl_name[2] = "Mercury";
-      $pl_name[3] = "Venus";
-      $pl_name[4] = "Mars";
-      $pl_name[5] = "Jupiter";
-      $pl_name[6] = "Saturn";
-      $pl_name[7] = "Uranus";
-      $pl_name[8] = "Neptune";
-      $pl_name[9] = "Pluto";
-      $pl_name[10] = "Ascendant";
-      $pl_name[11] = "House 2";
-      $pl_name[12] = "House 3";
-      $pl_name[13] = "House 4";
-      $pl_name[14] = "House 5";
-      $pl_name[15] = "House 6";
-      $pl_name[16] = "House 7";
-      $pl_name[17] = "House 8";
-      $pl_name[18] = "House 9";
-      $pl_name[19] = "MC (Midheaven)";
-      $pl_name[20] = "House 11";
-      $pl_name[21] = "House 12";
-
-      $sign_name[1] = "ARIES";
-      $sign_name[2] = "TAURUS";
-      $sign_name[3] = "GEMINI";
-      $sign_name[4] = "CANCER";
-      $sign_name[5] = "LEO";
-      $sign_name[6] = "VIRGO";
-      $sign_name[7] = "LIBRA";
-      $sign_name[8] = "SCORPIO";
-      $sign_name[9] = "SAGITTARIUS";
-      $sign_name[10] = "CAPRICORN";
-      $sign_name[11] = "AQUARIUS";
-      $sign_name[12] = "PISCES";
-
       $hr_ob = $hour;
       $min_ob = $minute;
 
-      $unknown_time = 0;
-      if (($hr_ob == 12) And ($min_ob == 0))
-      {
-        $unknown_time = 1;				// this person has an unknown birth time
-      }
+      $base_dir = "resources/natal_files";
 
       echo '<center><table width="61.8%" cellpadding="0" cellspacing="0" border="0">';
-      echo '<tr><td><font face="Verdana" size="3">';
+      echo '<tr><td>';
 
-      //display philosophy of astrology
-      echo "<center><font size='+1' color='#0000ff'><b>MY PHILOSOPHY OF ASTROLOGY</b></font></center>";
-
-      $base_dir = "resources/natal_files";
-      $file = "$base_dir/philo.txt";
-      $fh = fopen($file, "r");
-      $string = fread($fh, filesize($file));
-      fclose($fh);
-
-      $philo = nl2br($string);
-      echo "<font size=2>" . $philo . "</font>";
-
-
-      if ($unknown_time == 0)
-      {
+      if (!$unknown_time) {
         //display rising sign interpretation
         //get header first
-        echo "<center><font size='+1' color='#0000ff'><b>THE RISING SIGN OR ASCENDANT</b></font></center>";
+        echo "<h2>EL SIGNO ASCENDENTE</h2>";
+        echo "<p>" . read_from_file("$base_dir/ascendant.txt", "ascendant_description") . "</p>";
 
-        $file = "$base_dir/ascsign.txt";
-        $fh = fopen($file, "r");
-        $string = fread($fh, filesize($file));
-        fclose($fh);
+        $s_pos = longitude_to_sign($planets['Ascendant']['longitude']);
 
-        echo "<br>";
-        echo "<font size=2>" . $string . "</font>";
-        echo "<b>" . " YOUR ASCENDANT IS: <br><br>" . "</b>";
-
-        $s_pos = floor($longitude[10] / 30) + 1;
-        $phrase_to_look_for = $sign_name[$s_pos] . " rising";
-        $file = "$base_dir/rising.txt";
-        $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
-        $string = nl2br($string);
-
-        echo "<font size=2>" . $string . "</font>";
+        echo "<p>" . read_from_file("$base_dir/ascendant.txt", "ascendant_".$s_pos."_$gender") . "</p>";
       }
 
       //display planet in sign interpretation
       //get header first
-      echo "<center><font size='+1' color='#0000ff'><b>SIGN POSITIONS OF PLANETS</b></font></center>";
+      echo "<h2>EL SOL Y LA LUNA</h2>";
 
-      $file = "$base_dir/sign.txt";
-      $fh = fopen($file, "r");
-      $string = fread($fh, filesize($file));
-      fclose($fh);
-
-      $string = nl2br($string);
-      $sign_interp = $string;
-
-      // loop through each planet
-      for ($i = 0; $i <= 6; $i++)
+      // loop through each planet (only sun and moon)
+      $keys = ['Sun', 'Moon'];
+      foreach ($keys as $key)
       {
-        $s_pos = floor($longitude[$i] / 30) + 1;
+        $p_name = strtolower(trim($key));
+        $p_lng = $planets[$key]['longitude'];
+        $s_pos = longitude_to_sign($p_lng);
+        $file_name = "$base_dir/" . $p_name . ".txt";
 
-        $deg = Reduce_below_30($longitude[$i]);
-        if ($unknown_time == 1 And $i == 1 And ($deg < 7.7 Or $deg > 22.3))
+        $sign_interp .= read_from_file($file_name, $p_name."_description");
+
+        $deg = Reduce_below_30($p_lng);
+        if ($unknown_time and strcmp('Moon', $key) == 0 and count($moon_signs) > 1)
         {
-          continue;			//if the Moon is too close to the beginning or the end of a sign, then do not include it
+          //if the Moon changed during the time range entered, don't include it in the report
+          $sign_interp .= "<b>La luna en tu carta natal</b><br><br>No podemos darte datos certeros sobre tu luna, ya que en el rango horario que ingresaste, la luna pasó del signo <b>$moon_signs[0]</b> al signo <b>$moon_signs[1]</b>. Te recomendamos que busques tu horario de nacimiento para que puedas saber en qué signo se encontraba la luna en el momento en que naciste.<br>";
+        } else  {
+          $sign_interp .= read_from_file($file_name, $p_name."_".$s_pos."_".$gender);
         }
-        $phrase_to_look_for = $pl_name[$i] . " in";
-        $file = "$base_dir/sign_" . trim($s_pos) . ".txt";
-        $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
-        $string = nl2br($string);
-        $sign_interp .= $string;
       }
 
-      echo "<font size=2>" . $sign_interp . "</font>";
+      echo "<p>" . $sign_interp . "</p>";
 
-
-      if ($unknown_time == 0)
+      /*
+      if (!$unknown_time)
       {
         //display planet in house interpretation
         //get header first
@@ -564,7 +560,7 @@ $my_error = "";
         for ($i = 0; $i <= 9; $i++)
         {
           $h_pos = $house_pos[$i];
-          $phrase_to_look_for = $pl_name[$i] . " in";
+          $phrase_to_look_for = $pl_names[$i] . " in";
           $file = "$base_dir/house_" . trim($h_pos) . ".txt";
           $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
           $string = nl2br($string);
@@ -573,8 +569,9 @@ $my_error = "";
 
         echo "<font size=2>" . $house_interp . "</font>";
       }
+      */
 
-
+      /*
       //display planetary aspect interpretations
       //get header first
       echo "<center><font size='+1' color='#0000ff'><b>PLANETARY ASPECTS</b></font></center>";
@@ -653,20 +650,21 @@ $my_error = "";
               $aspect = " discordant to ";
             }
 
-            $phrase_to_look_for = $pl_name[$i] . $aspect . $pl_name[$j];
-            $file = "$base_dir/" . strtolower($pl_name[$i]) . ".txt";
+            $phrase_to_look_for = $pl_names[$i] . $aspect . $pl_names[$j];
+            $file = "$base_dir/" . strtolower($pl_names[$i]) . ".txt";
             $string = Find_Specific_Report_Paragraph($phrase_to_look_for, $file);
             $string = nl2br($string);
             echo "<font size=2>" . $string . "</font>";
           }
         }
       }
+      */
 
-
+      /*
       //display closing
-      echo "<br><center><font size='+1' color='#0000ff'><b>CLOSING COMMENTS</b></font></center>";
+      echo "<br><center><font size='+1' color='#0000ff'><b>Comentarios finales</b></font></center>";
 
-      if ($unknown_time == 1)
+      if ($unknown_time)
       {
         $file = "$base_dir/closing_unk.txt";
       }
@@ -680,10 +678,12 @@ $my_error = "";
 
       $closing = nl2br($string);
       echo "<font size=2>" . $closing . "</font>";
+      */
 
-      echo '</font></td></tr>';
+      echo '</td></tr>';
       echo '</table></center>';
 
+      /*
       $retrograde = "          ";
 
       //display natal data
@@ -692,7 +692,7 @@ $my_error = "";
       echo '<tr>';
       echo "<td><font color='#0000ff'><b> Name </b></font></td>";
       echo "<td><font color='#0000ff'><b> Longitude </b></font></td>";
-      if ($unknown_time == 1)
+      if ($unknown_time)
       {
         echo "<td>&nbsp;</td>";
       }
@@ -705,7 +705,7 @@ $my_error = "";
       for ($i = 0; $i <= 9; $i++)
       {
         echo '<tr>';
-        echo "<td>" . $pl_name[$i] . "</td>";
+        echo "<td>" . $pl_names[$i] . "</td>";
         echo "<td><font face='Courier New'>" . Convert_Longitude($longitude[$i]) . "</font></td>";
         if ($unknown_time == 1)
         {
@@ -733,7 +733,7 @@ $my_error = "";
       echo "<td> &nbsp </td>";
       echo '</tr>';
 
-      if ($unknown_time == 0)
+      if ($unknown_time)
       {
         echo '<tr>';
         echo "<td><font color='#0000ff'><b> Name </b></font></td>";
@@ -763,57 +763,40 @@ $my_error = "";
       }
 
       echo '</table></center>',"\n";
-      echo "<br /><br />";
-
-      include ('footer_data_entry.html');
+      */
       exit();
     }
   }
 
 ?>
-
-<table style="margin: 0px 20px;">
-  <tr>
-    <td>
-      <font color='#ff0000' size=4>
-      <b>Please Read This:</b><br>
-      </font>
-
-      <font color='#000000' size=2>
-      If you do not know all the information that is required by the form below, then here is where you may go<br>
-      for longitude, latitude, and time zone information (all of which are very important):<br><br>
-      <a href="http://www.astro.com/atlas">http://www.astro.com/atlas</a><br><br>
-
-      1) Click on SEARCH.<br>
-      2) Click on the link that is your birth place.<br>
-      3) Fill out the information in order to find the time zone at birth.<br>
-      4) Click on Continue.<br>
-      5) Locate the time zone information. For example:<br><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;<b>Time Zone: 5 h west,  Daylight Saving</b> (this means select the "GMT -04:00" option - one hour added for DST.<br><br>
-      6) Enter the longitude, latitude, and time zone information into the below form.<br><br>
-
-      OR JUST GO DIRECTLY TO:<br><br>
-      <a href="http://www.astro.com/cgi/ade.cgi">http://www.astro.com/cgi/ade.cgi</a><br><br>
-      and fill out all the information. Then come back here and fill out the form with the data you now have.<br><br><br>
-      </font>
-    </td>
-  </tr>
-</table>
-
+<?php
+  header('Content-Type: text/html; charset=ISO-8859-1');
+?>
 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" style="margin: 0px 20px;">
-  <fieldset><legend><font size=5><b>Data entry for Natal Report</b></font></legend>
-
-  &nbsp;&nbsp;<font color="#ff0000"><b>All fields are required.</b></font><br>
+  <fieldset><legend>Calcular carta natal</legend>
 
   <table style="font-size:12px;">
     <TR>
-      <TD>
-        <P align="right">Name:</P>
-      </TD>
+      <td>
+        <P align="right">Nombre:</P>
+      </td>
 
-      <TD>
-        <INPUT size="40" name="name" value="<?php echo $_POST['name']; ?>">
-      </TD>
+      <td>
+        <input size="40" name="name" value="<?php echo $_POST['name']; ?>"/>
+      </td>
+    </TR>
+
+    <TR>
+      <td>
+        <P align="right">Sexo:</P>
+      </td>
+
+      <td>
+        <div>
+          <input value="female" name="gender" type="radio"/><label for="female-gender">Femenino</label>
+          <input value="male" name="gender" type="radio"/><label for="male-gender">Masculino</label>
+        </div>
+      </td>
     </TR>
 
     <TR>
@@ -836,37 +819,31 @@ $my_error = "";
         echo '</select>';
         ?>
 
-        <INPUT size="2" maxlength="2" name="day" value="<?php echo $_POST['day']; ?>">
-        <b>,</b>&nbsp;
-        <INPUT size="4" maxlength="4" name="year" value="<?php echo $_POST['year']; ?>">
-         <font color="#0000ff">
-        (only years from 1900 through 2099 are valid)
-        </font>
+        <input size="2" maxlength="2" name="day" value="<?php echo $_POST['day']; ?>"/>
+        <input size="4" maxlength="4" name="year" value="<?php echo $_POST['year']; ?>"/>
+        (Solo los años de 1900 hasta 2099 son válidos)
      </TD>
     </TR>
 
     <TR>
       <td valign="top"><P align="right">Horario de Nacimiento:</P></td>
-      <TD>
-        <INPUT maxlength="2" size="2" name="hour" value="<?php echo $_POST['hour']; ?>">
-        <b>:</b>
-        <INPUT maxlength="2" size="2" name="minute" value="<?php echo $_POST['minute']; ?>">
-
-        <br>
-
-        <font color="#0000ff">
-        (please give time of birth in 24 hour format. If your birth time is unknown, please enter 12:00)<br>
-        (if you were born EXACTLY at 12:00, then please enter 11:59 or 12:01 — 12:00 is reserved for unknown birth times only)
-        <br><br>
-        </font>
-      </TD>
-    </TR>
-
-    <TR>
-      <td valign="top">
-        <P align="right"><font color="#ff0000">
-        <b>IMPORTANT</b>
-        </font></P>
+      <td>
+        <div id="known-time-wrapper">
+          <input maxlength="2" size="2" name="hour" value="<?php echo $_POST['hour']; ?>"/>
+          <input maxlength="2" size="2" name="minute" value="<?php echo $_POST['minute']; ?>"/>
+        </div>
+        <div id="unknown-time-wrapper">
+          <select class="time-window" name="time-window">
+            <option value="" selected>Elegí un rango horario aproximado</option>
+            <?php
+            foreach ($timeWindows as $key => $value) {
+              echo "<option value=\"$key\">$value[name] ($value[start]-$value[end])</option>\n";
+            }
+            ?>
+          </select>
+        </div>
+        <input id="unknown-time" name="unknown-time" type="checkbox">
+        <label for="unknown-time">No conozco mi horario de nacimiento.</label>
       </td>
     </TR>
 
@@ -874,7 +851,7 @@ $my_error = "";
       <td valign="top"><P align="right">Pais:</P></td>
       <td>
         <select class="country" name="country">
-          <option value="" selected>Seleccione el pais</option>
+          <option value="<?php echo $_POST['country']; ?>" selected>Seleccione el pais</option>
           <?php
             require('lib/get_countries.php');
           ?>
@@ -882,30 +859,30 @@ $my_error = "";
       </td>
     </TR>
 
-    <TR>
+    <TR id="state-input">
       <td valign="top"><P align="right">Estado/Provincia:</P></td>
       <td>
         <select class="state" name="state">
-          <option value="" selected>Seleccione el estado/provincia</option>
+          <option value="<?php echo $_POST['state']; ?>" selected>Seleccione el estado/provincia</option>
         </select>
       </td>
     </TR>
 
-    <TR>
+    <TR id="city-input">
       <td valign="top"><P align="right">Ciudad:</P></td>
       <td>
         <select class="city" name="city">
-          <option value="" selected>Seleccione la ciudad</option>
+          <option value="<?php echo $_POST['city']; ?>" selected>Seleccione la ciudad</option>
         </select>
       </td>
     </TR>
 
     <TR>
-      <td valign="top"><P align="right">Time zone:</P></td>
+      <td valign="top"><P align="right">Zona horaria:</P></td>
 
-      <TD>
+      <td>
         <select name="timezone" size="1">
-          <option value="" selected>Select Time Zone</option>
+          <option value="" selected>Seleccioná la zona horaria</option>
           <option value="-12" >GMT -12:00 hrs - IDLW</option>
           <option value="-11" >GMT -11:00 hrs - BET or NT</option>
           <option value="-10.5" >GMT -10:30 hrs - HST</option>
@@ -945,94 +922,13 @@ $my_error = "";
           <option value="12.5" >GMT +12:30 hrs - NZS</option>
           <option value="13" >GMT +13:00 hrs - NZST</option>
         </select>
-
-        <br>
-
-        <font color="#0000ff">
-        (example: Chicago is "GMT -06:00 hrs" (standard time), Paris is "GMT +01:00 hrs" (standard time).<br>
-        Add 1 hour if Daylight Saving was in effect when you were born (select next time zone down in the list).
-        <br><br>
-        </font>
-      </TD>
-    </TR>
-
-    <TR style="display:none;">
-      <td valign="top"><P align="right">Longitude:</P></td>
-      <TD>
-        <INPUT maxlength="3" size="3" name="long_deg" value="<?php echo $_POST['long_deg']; ?>">
-        <select name="ew">
-          <?php
-          if ($ew == "-1")
-          {
-            echo "<option value='-1' selected>W</option>";
-            echo "<option value='1'>E</option>";
-          }
-          elseif ($ew == "1")
-          {
-            echo "<option value='-1'>W</option>";
-            echo "<option value='1' selected>E</option>";
-          }
-          else
-          {
-            echo "<option value='' selected>Select</option>";
-            echo "<option value='-1'>W</option>";
-            echo "<option value='1'>E</option>";
-          }
-          ?>
-        </select>
-
-        <INPUT maxlength="2" size="2" name="long_min" value="<?php echo $_POST['long_min']; ?>">
-        <font color="#0000ff">
-        (example: Chicago is 87 W 39, Sydney is 151 E 13)
-        </font>
-      </TD>
-    </TR>
-
-    <TR style="display:none;">
-      <td valign="top"><P align="right">Latitude:</P></td>
-
-      <TD>
-        <INPUT maxlength="2" size="3" name="lat_deg" value="<?php echo $_POST['lat_deg']; ?>">
-        <select name="ns">
-          <?php
-          if ($ns == "1")
-          {
-            echo "<option value='1' selected>N</option>";
-            echo "<option value='-1'>S</option>";
-          }
-          elseif ($ns == "-1")
-          {
-            echo "<option value='1'>N</option>";
-            echo "<option value='-1' selected>S</option>";
-          }
-          else
-          {
-            echo "<option value='' selected>Select</option>";
-            echo "<option value='1'>N</option>";
-            echo "<option value='-1'>S</option>";
-          }
-          ?>
-        </select>
-
-        <INPUT maxlength="2" size="2" name="lat_min" value="<?php echo $_POST['lat_min']; ?>">
-        <font color="#0000ff">
-        (example: Chicago is 41 N 51, Sydney is 33 S 52)
-        </font>
-        <br><br>
-      </TD>
+      </td>
     </TR>
   </table>
 
-  <br>
-  <center>
-  <font color="#ff0000"><b>Most people mess up the time zone selection. Please make sure your selection is correct.</b></font><br><br>
-  <input type="hidden" name="submitted" value="TRUE">
-  <INPUT type="submit" name="submit" value="Submit data (AFTER DOUBLE-CHECKING IT FOR ERRORS)" align="middle" style="background-color:#66ff66;color:#000000;font-size:16px;font-weight:bold">
-  </center>
-
-  <br>
+  <input type="hidden" name="submitted" value="true"/>
+  <input type="submit" name="submit" value="Enviar" />
   </fieldset>
 </form>
-
-<?php
-?>
+</body>
+</html>

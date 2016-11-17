@@ -1,5 +1,6 @@
 <?php
 include(dirname(__FILE__)."/location.php");
+header('Content-Type: text/html; charset=ISO-8859-1');
 
 if($_POST['countryCode'] && $_POST['state'])
 {

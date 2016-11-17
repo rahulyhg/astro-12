@@ -68,14 +68,14 @@ class Validate_fields {
 		}
 	}
 
-	function add_text_field($name, $val, $type = "text", $required = "y", $length = 0) {
+	function add_text_field($name, $val, $type = "text", $required = true, $length = 0) {
 		$this->fields[$name]['name'] = $val;
 		$this->fields[$name]['type'] = $type;
 		$this->fields[$name]['required'] = $required;
 		$this->fields[$name]['length'] = $length;
 	}
 
-	function add_num_field($name, $val, $type = "number", $required = "y", $decimals = 0, $length = 0) {
+	function add_num_field($name, $val, $type = "number", $required = true, $decimals = 0, $length = 0) {
 		$this->fields[$name]['name'] = $val;
 		$this->fields[$name]['type'] = $type;
 		$this->fields[$name]['required'] = $required;
@@ -83,29 +83,29 @@ class Validate_fields {
 		$this->fields[$name]['length'] = $length;
 	}
 
-	function add_link_field($name, $val, $type = "email", $required = "y") {
+	function add_link_field($name, $val, $type = "email", $required = true) {
 		$this->fields[$name]['name'] = $val;
 		$this->fields[$name]['type'] = $type;
 		$this->fields[$name]['required'] = $required;
 	}
 
-	function add_date_field($name, $val, $type = "date", $version = "us", $required = "y") {
+	function add_date_field($name, $val, $type = "date", $version = "us", $required = true) {
 		$this->fields[$name]['name'] = $val;
 		$this->fields[$name]['type'] = $type;
 		$this->fields[$name]['version'] = $version;
 		$this->fields[$name]['required'] = $required;
 	}
 
-	function check_url($url_val, $field, $req = "y") {
+	function check_url($url_val, $field, $req = true) {
 		if ($url_val == "") {
-			if ($req == "y") {
+			if ($req) {
 				$this->messages[] = $this->error_text(1, $field);
 				return false;
 			} else {
 				return true;
 			}
 		} else {
-			if ($req == "y")
+			if ($req)
 			{
 			  $url_pattern = "http\:\/\/[[:alnum:]\-\.]+(\.[[:alpha:]]{2,4})+";
 			  $url_pattern .= "(\/[\w\-]+)*"; // folders like /val_1/45/
@@ -140,9 +140,9 @@ class Validate_fields {
 		}
 	}
 
-	function check_num_val($num_val, $field, $num_len = 0, $req = "n") {
+	function check_num_val($num_val, $field, $num_len = 0, $req = false) {
 		if ($num_val == "") {
-			if ($req == "y") {
+			if ($req) {
 				$this->messages[] = $this->error_text(1, $field);
 				return false;
 			} else {
@@ -159,9 +159,9 @@ class Validate_fields {
 		}
 	}
 
-	function check_text($text_val, $field, $text_len = 0, $req = "y") {
+	function check_text($text_val, $field, $text_len = 0, $req = true) {
 		if ($text_val == "") {
-			if ($req == "y") {
+			if ($req) {
 				$this->messages[] = $this->error_text(1, $field);
 				return false;
 			} else {
@@ -181,9 +181,9 @@ class Validate_fields {
 		}
 	}
 
-	function check_decimal($dec_val, $field, $decimals = 2, $req = "n") {
+	function check_decimal($dec_val, $field, $decimals = 2, $req = false) {
 		if ($dec_val == "") {
-			if ($req == "y") {
+			if ($req) {
 				$this->messages[] = $this->error_text(1, $field);
 				return false;
 			} else {
@@ -200,9 +200,9 @@ class Validate_fields {
 		}
 	}
 
-	function check_date($date, $field, $version = "us", $req = "n") {
+	function check_date($date, $field, $version = "us", $req = false) {
 		if ($date == "") {
-			if ($req == "y") {
+			if ($req) {
 				$this->messages[] = $this->error_text(1, $field);
 				return false;
 			} else {
@@ -266,9 +266,9 @@ class Validate_fields {
 		}
 	}
 
-	function check_email($mail_address, $field, $req = "y") {
+	function check_email($mail_address, $field, $req = true) {
 		if ($mail_address == "") {
-			if ($req == "y") {
+			if ($req) {
 				$this->messages[] = $this->error_text(1, $field);
 				return false;
 			} else {
