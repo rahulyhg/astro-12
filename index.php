@@ -170,9 +170,9 @@ function moon_signs_for_unknown_time($moon_start, $moon_end) {
 // Gets the GeoPosition of the city usign Google's Geocode API
 function Get_Geo_Position($city, $state, $country) {
   //return array("lat" => -34, "lng" => -58);
-  $city = split(':', $city)[1];
-  $state = split(':', $state)[1];
-  $country = split(':', $country)[1];
+  $city = trim(mb_convert_encoding(split(':', $city)[1], 'ISO-8859-1'));
+  $state = trim(mb_convert_encoding(split(':', $state)[1], 'ISO-8859-1'));
+  $country = trim(mb_convert_encoding(split(':', $country)[1], 'ISO-8859-1'));
 
   $address = $city . ',' . $state . ',' . $country;
   $url = "http://maps.google.com/maps/api/geocode/json?&address=".urlencode($address);
@@ -186,6 +186,27 @@ function Get_Geo_Position($city, $state, $country) {
   }
   /*
   */
+}
+
+function get_time_zone($lat, $lng) {
+  $now = time();
+  $url = "https://maps.googleapis.com/maps/api/timezone/json?location=$lat,$lng&timestamp=$now";
+
+  $json = file_get_contents($url);
+
+  $data = json_decode($json, TRUE);
+
+  if($data['status']=="OK") {
+    $tz_str = $data['timeZoneId'];
+    $time = new DateTime('now', new DateTimeZone($tz_str));
+    $timezoneOffset = $time->format('P');
+    return decimal_hours($timezoneOffset);
+  }
+}
+
+function decimal_hours($time) {
+    $hms = explode(":", $time);
+    return ($hms[0] + ($hms[1]/60) + ($hms[2]/3600));
 }
 
 // Recursive function to find a value by a given key on a multidimensional array
@@ -227,8 +248,6 @@ $my_error = "";
     $hour = safeEscapeString($_POST["hour"]);
     $minute = safeEscapeString($_POST["minute"]);
 
-    $timezone = safeEscapeString($_POST["timezone"]);
-
     $country = safeEscapeString($_POST["country"]);
     $state = safeEscapeString($_POST["state"]);
     $city = safeEscapeString($_POST["city"]);
@@ -237,6 +256,8 @@ $my_error = "";
 
     $lat = $position["lat"];
     $lng = $position["lng"];
+
+    $timezone = get_time_zone($lat, $lng);
 
     include("lib/validation_class.php");
 
@@ -881,6 +902,7 @@ $my_error = "";
       </td>
     </TR>
 
+    <!--
     <TR>
       <td valign="top"><P align="right">Zona horaria:</P></td>
 
@@ -928,6 +950,7 @@ $my_error = "";
         </select>
       </td>
     </TR>
+    -->
   </table>
 
   <input type="hidden" name="submitted" value="true"/>

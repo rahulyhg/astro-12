@@ -24,6 +24,8 @@ class Location
 
   function get_states($country_code) {
     global $DB_con;
+    
+    $country_code = trim($country_code);
 
     $stmt = $DB_con->prepare(self::GET_STATES_QUERY);
     $stmt->bindParam(':countryCode', $country_code, PDO::PARAM_STR, 4);
@@ -40,6 +42,9 @@ class Location
 
   function get_cities($country_code, $state_id) {
     global $DB_con;
+
+    $state_id = trim(mb_convert_encoding($state_id, 'ISO-8859-1'));
+    $country_code = trim($country_code);
 
     $stmt = $DB_con->prepare(self::GET_CITIES_QUERY);
     $stmt->bindParam(':countryCode', $country_code, PDO::PARAM_STR, 4);

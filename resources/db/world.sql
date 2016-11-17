@@ -4123,6 +4123,7 @@ INSERT INTO `city` VALUES (4076,'Hebron','PSE','Hebron',119401);
 INSERT INTO `city` VALUES (4077,'Jabaliya','PSE','North Gaza',113901);
 INSERT INTO `city` VALUES (4078,'Nablus','PSE','Nablus',100231);
 INSERT INTO `city` VALUES (4079,'Rafah','PSE','Rafah',92020);
+INSERT INTO `city` VALUES (4080,'Villa Regina','ARG','Río Negro',33089);
 COMMIT;
 --
 -- Table structure for table `country`
