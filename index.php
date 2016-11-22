@@ -285,40 +285,35 @@ $my_error = "";
 
     // additional error checks on user-entered data
     if ($gender != "male" and $gender != "female") {
-      $my_error .= "Por favor seleccione su género.";
+      $my_error .= "Por favor seleccione su género.<br>";
     }
 
     if ($month != "" And $day != "" And $year != "")
     {
       if (!$date = checkdate(settype ($month, "integer"), settype ($day, "integer"), settype ($year, "integer")))
       {
-        $my_error .= "La fecha de nacimiento ingresada no es válida.";
+        $my_error .= "La fecha de nacimiento ingresada no es válida.<br>";
       }
     }
 
     if (($year < 1900) Or ($year >= 2100))
     {
-      $my_error .= "Por favor ingrese un año entre 1900 y 2099.";
+      $my_error .= "Por favor ingrese un año entre 1900 y 2099.<br>";
     }
 
     if (($hour < 0) Or ($hour > 23))
     {
-      $my_error .= "La hora de nacimiento debe ser entre 0 y 23.";
+      $my_error .= "La hora de nacimiento debe ser entre 0 y 23.<br>";
     }
 
     if (($minute < 0) Or ($minute > 59))
     {
-      $my_error .= "Los minutos de nacimiento deben ser entre 0 y 59.";
+      $my_error .= "Los minutos de nacimiento deben ser entre 0 y 59.<br>";
     }
 
-    if (($lng < -180) Or ($lng > 180))
+    if (is_null($position))
     {
-      $my_error .= "Longitude degrees must be between -180 and 180.";
-    }
-
-    if (($lat < -90) Or ($lat > 90))
-    {
-      $my_error .= "Latitude degrees must be between -90 and 90.";
+      $my_error .= "Hubo un error al procesar su ubicación.<br>";
     }
 
     $validation_error = $my_form->validation();
@@ -326,8 +321,7 @@ $my_error = "";
     if ((!$validation_error) || ($my_error != ""))
     {
       $error = $my_form->create_msg();
-      echo "<table align='center' WIDTH='98%' BORDER='0' CELLSPACING='15' CELLPADDING='0'><tr><td><center><b>";
-      echo "<h3>Error! - The following error(s) occurred:</h3><br>";
+      echo "<h3>Hay errores en su formulario:</h3>";
 
       if ($error)
       {
@@ -337,8 +331,6 @@ $my_error = "";
       {
         echo $error . "<br>" . $my_error . "<br>";
       }
-
-      echo "</b></center></td></tr></table>";
     }
     else
     {
@@ -363,7 +355,6 @@ $my_error = "";
       $insecs = "0";
 
       $intz = $timezone;
-
 
       $my_longitude = $lng;
       $my_latitude = $lat;
@@ -818,8 +809,10 @@ $my_error = "";
 
       <td>
         <div>
-          <input value="female" name="gender" type="radio"/><label for="female-gender">Femenino</label>
-          <input value="male" name="gender" type="radio"/><label for="male-gender">Masculino</label>
+          <input value="female" name="gender" type="radio" <?php echo ($_POST['gender']=='female') ? 'checked' : ''; ?> />
+          <label for="female-gender">Femenino</label>
+          <input value="male" name="gender" type="radio" <?php echo ($_POST['gender']=='male') ? 'checked' : ''; ?> />
+          <label for="male-gender">Masculino</label>
         </div>
       </td>
     </TR>
@@ -830,6 +823,8 @@ $my_error = "";
       </TD>
 
       <TD>
+        <input size="2" maxlength="2" name="day" value="<?php echo $_POST['day']; ?>"/>
+
         <?php
         echo '<select name="month">';
         foreach ($months as $key => $value)
@@ -844,7 +839,6 @@ $my_error = "";
         echo '</select>';
         ?>
 
-        <input size="2" maxlength="2" name="day" value="<?php echo $_POST['day']; ?>"/>
         <input size="4" maxlength="4" name="year" value="<?php echo $_POST['year']; ?>"/>
         (Solo los años de 1900 hasta 2099 son válidos)
      </TD>
@@ -862,12 +856,17 @@ $my_error = "";
             <option value="" selected>Elegí un rango horario aproximado</option>
             <?php
             foreach ($timeWindows as $key => $value) {
-              echo "<option value=\"$key\">$value[name] ($value[start]-$value[end])</option>\n";
+              echo "<option value=\"$key\"";
+              if ($key == $time_range)
+              {
+                echo ' selected="selected"';
+              }
+              echo ">$value[name] ($value[start]-$value[end])</option>\n";
             }
             ?>
           </select>
         </div>
-        <input id="unknown-time" name="unknown-time" type="checkbox">
+        <input id="unknown-time" name="unknown-time" type="checkbox" <?php echo (isset($_POST['unknown-time']) ? 'checked' : ''); ?> >
         <label for="unknown-time">No conozco mi horario de nacimiento.</label>
       </td>
     </TR>
@@ -876,9 +875,18 @@ $my_error = "";
       <td valign="top"><P align="right">Pais:</P></td>
       <td>
         <select class="country" name="country">
-          <option value="<?php echo $_POST['country']; ?>" selected>Seleccione el pais</option>
+          <option>Seleccione el pais</option>
           <?php
             require('lib/get_countries.php');
+
+            foreach ($countries as $key => $value) {
+              echo "<option value=\"$value[code]:$value[name]\"";
+              if ($value['code'].':'.$value['name'] == $country)
+              {
+                echo ' selected="selected"';
+              }
+              echo ">$value[name]</option>\n";
+            }
           ?>
         </select>
       </td>

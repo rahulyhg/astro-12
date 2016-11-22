@@ -313,16 +313,16 @@ class Validate_fields {
 			case "dk":
 			break;
 			default:
-			$msg[0] = "<font color='#0000ff' size=+1>Please correct the following error(s) in the listed fields:</font><br><font size=+1 color='#ff0000'>";
-			$msg[1] = "the " . $fieldname . " field is empty.";
-			$msg[10] = "the date in the " . $fieldname . " field is invalid.";
-			$msg[11] = "the " . $fieldname . " is invalid.";
-			$msg[12] = "the value in the " . $fieldname . " field is invalid.";
-			$msg[13] = "the entry in the " . $fieldname . " field is too long.";
-			$msg[14] = "the URL in the " . $fieldname . " field is invalid.";
-			$msg[15] = "there is HTML code in the " . $fieldname . " field - this is not allowed.";
+			$msg[0] = "Por favor corrija los siguientes errores:";
+			$msg[1] = "El campo " . $fieldname . " está vacío.";
+			$msg[10] = "La fecha en el campo " . $fieldname . " no es válida.";
+			$msg[11] = "El valor de " . $fieldname . " no es válido.";
+			$msg[12] = "El valor del campo " . $fieldname . " no es válido.";
+			$msg[13] = "El valor del campo " . $fieldname . " es demasiado largo.";
+			$msg[14] = "La URL en el campo " . $fieldname . " no es válida.";
+			$msg[15] = "Hay código HTML en el campo " . $fieldname . " - esto no está permitido.";
 		}
-		return $msg[$num];
+		return mb_convert_encoding(nl2br($msg[$num]), 'ISO-8859-1');
 	}
 }
 ?>
