@@ -5,9 +5,16 @@ $(function() {
   completeLocationFields();
 
   $("#unknown-time").change(toggleUnknownTimeWrapper);
-  $('.country').change(countryChange);
-  $('.state').change(stateChange);
-  $('.city').change(cityChange);
+  $('#country').change(countryChange);
+  $('#state').change(stateChange);
+  $('#city').change(cityChange);
+
+  $('input').focus(function() { 
+    var name = $(this).attr('name');
+    $('input[name=' + name + ']').removeClass('invalid'); 
+  });
+
+  $('select').focus(function() { $(this).removeClass('invalid'); });
 
   function completeLocationFields() {
     $("#state-input").hide();
@@ -15,13 +22,17 @@ $(function() {
 
     var countryCode = $("#selected-country").val();
 
-    if (SELECTED_LOCATION_PATTERN.test(countryCode)) {
+    if (!!countryCode) {
       var selectedState = $("#selected-state").val();
       getStates(countryCode, function() { 
-        if (SELECTED_LOCATION_PATTERN.test(selectedState)) {
-          $(".state").val(selectedState);
+        if (!!selectedState) {
+          $("#state").val(selectedState);
           var selectedCity = $("#selected-city").val();
-          getCities(countryCode, selectedState, function() { $(".city").val(selectedCity) });
+          getCities(countryCode, selectedState, function() { 
+            if (!!selectedCity) {
+              $("#city").val(selectedCity);
+            }
+          });
         }
       });
     }
@@ -44,43 +55,52 @@ $(function() {
   }
 
   function clearStateFields() {
-    $(".state").find('option').remove();
+    $("#state").find('option').remove();
+    $("#state").removeClass('invalid');
     $("#state-input").hide();
     $("#selected-state").val('');
   }
 
   function clearCityFields() {
-    $(".city").find('option').remove();
+    $("#city").find('option').remove();
+    $("#city").removeClass('invalid');
     $("#city-input").hide();
     $("#selected-city").val('');
   }
 
   function countryChange(callback) {
-    var countryCode = $(".country").val();
-    $("#selected-country").val(countryCode);
+    var countryCode = $("#country").val();
+    $("#selected-country").val('');
 
     clearStateFields();
     clearCityFields();
 
     if (SELECTED_LOCATION_PATTERN.test(countryCode)) {
+      $("#selected-country").val(countryCode);
       getStates(countryCode);
     }
   }
 
   function stateChange(callback) {
-    var countryCode = $(".country").val();
-    var state = $(".state").val();
-    $("#selected-state").val(state);
+    var countryCode = $("#country").val();
+    var state = $("#state").val();
+    $("#selected-state").val('');
 
     clearCityFields();
+    
     if (SELECTED_LOCATION_PATTERN.test(state)) {
+      $("#selected-state").val(state);
       getCities(countryCode, state);
     }
   }
 
   function cityChange() {
-    var city = $(".city").val();
-    $("#selected-city").val(city);
+    var city = $("#city").val();
+    $("#selected-city").val('');
+
+    if (SELECTED_LOCATION_PATTERN.test(city)) {
+      $("#selected-city").val(city);
+    }
   }
 
   function getStates(countryCode, callback) {
@@ -90,7 +110,7 @@ $(function() {
       data: { countryCode: countryCode },
       cache: false,
       success: function(html) {
-        $(".state").html(html);
+        $("#state").html(html);
         $("#state-input").show();
         if (callback) {
           callback();
@@ -106,7 +126,7 @@ $(function() {
       data: { countryCode: countryCode, state: state },
       cache: false,
       success: function(html) {
-        $(".city").html(html);
+        $("#city").html(html);
         $("#city-input").show();
         if (callback) {
           callback();

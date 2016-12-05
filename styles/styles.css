@@ -4,4 +4,14 @@ body {
 
 input, select {
   font-family: 'Open Sans', sans-serif;
+  margin: 2px;
+}
+
+input[type=number] {
+  width: 60px;
+}
+
+.invalid {
+  box-shadow: 0 0 5px 1px #c12c2c;
+  border: 1px solid #c12c2c;
 }

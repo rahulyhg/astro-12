@@ -1,16 +1,14 @@
 <?php
 class Validate_fields {
 	var $fields = array();
-	var $messages = array();
 	var $check_4html = false;
-	var $language;
+	var $errors;
 	var $time_stamp;
 	var $month;
 	var $day;
 	var $year;
 
 	function Validate_fields() {
-		$this->language = "us";
 		$this->create_msg();
 	}
 
@@ -21,6 +19,8 @@ class Validate_fields {
 			$length = $val['length'];
 			$required = $val['required'];
 			$num_decimals = $val['decimals'];
+			$min = $val['min'];
+			$max = $val['max'];
 			$ver = $val['version'];
 			switch ($val['type']) {
 				case "email":
@@ -29,7 +29,7 @@ class Validate_fields {
 				}
 				break;
 				case "number":
-				if (!$this->check_num_val($name, $key, $length, $required)) {
+				if (!$this->check_num_val($name, $key, $required, $min, $max)) {
 					$status++;
 				}
 				break;
@@ -49,7 +49,7 @@ class Validate_fields {
 				}
 				break;
 				case "text":
-				if (!$this->check_text($name, $key, $length, $required)) {
+				if (!$this->check_text($name, $key, $required, $length)) {
 					$status++;
 				}
 				break;
@@ -68,19 +68,19 @@ class Validate_fields {
 		}
 	}
 
-	function add_text_field($name, $val, $type = "text", $required = true, $length = 0) {
+	function add_text_field($name, $val, $required = true, $length = 0) {
 		$this->fields[$name]['name'] = $val;
-		$this->fields[$name]['type'] = $type;
+		$this->fields[$name]['type'] = "text";
 		$this->fields[$name]['required'] = $required;
 		$this->fields[$name]['length'] = $length;
 	}
 
-	function add_num_field($name, $val, $type = "number", $required = true, $decimals = 0, $length = 0) {
+	function add_num_field($name, $val, $required = true, $min = 0, $max = 0) {
 		$this->fields[$name]['name'] = $val;
-		$this->fields[$name]['type'] = $type;
+		$this->fields[$name]['type'] = "number";
 		$this->fields[$name]['required'] = $required;
-		$this->fields[$name]['decimals'] = $decimals;
-		$this->fields[$name]['length'] = $length;
+		$this->fields[$name]['min'] = $min;
+		$this->fields[$name]['max'] = $max;
 	}
 
 	function add_link_field($name, $val, $type = "email", $required = true) {
@@ -140,45 +140,30 @@ class Validate_fields {
 		}
 	}
 
-	function check_num_val($num_val, $field, $num_len = 0, $req = false) {
-		if ($num_val == "") {
-			if ($req) {
-				$this->messages[] = $this->error_text(1, $field);
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			$pattern = ($num_len == 0) ? "/^\-?[0-9]*$/" : "/^\-?[0-9]{0,".$num_len."}$/";
-			if (preg_match($pattern, $num_val)) {
-				return true;
-			} else {
-				$this->messages[] = $this->error_text(12, $field);
-				return false;
-			}
+	function check_num_val($num_val, $field, $required = true, $min = 0, $max = 0) {
+		if ($text_val == "" && !$required) {
+			return true;
 		}
+
+		if (!is_numeric($num_val) || ($min > 0 && $min > intval($num_val)) || ($max > 0 && $max < intval($num_val))) {
+			$this->errors[$field] = $field;
+			return false;
+		}
+
+		return true;
 	}
 
-	function check_text($text_val, $field, $text_len = 0, $req = true) {
-		if ($text_val == "") {
-			if ($req) {
-				$this->messages[] = $this->error_text(1, $field);
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			if ($text_len > 0) {
-				if (strlen($text_val) > $text_len) {
-					$this->messages[] = $this->error_text(13, $field);
-					return false;
-				} else {
-					return true;
-				}
-			} else {
-				return true;
-			}
+	function check_text($text_val, $field, $required = true, $text_len = 0) {
+		if (empty($text_val) && !$required) {
+			return true;
 		}
+
+		if (empty($text_val) || ($text_len > 0 && strlen($text_val) > $text_len)) {
+			$this->errors[$field] = $field;
+			return false;
+		}
+
+		return true;
 	}
 
 	function check_decimal($dec_val, $field, $decimals = 2, $req = false) {

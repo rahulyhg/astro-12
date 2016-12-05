@@ -225,10 +225,9 @@ Function Rec_Find($array, $key_element) {
 
 $months = array(0 => 'Seleccione el mes', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre');
 $timeWindows = array(1 => array(name => 'Madrugada', start => '00:00', end => '06:00'),
-  2 => array(name => 'Mañana', start => '06:00', end => '12:00'),
-  3 => array(name => 'Tarde', start => '12:00', end => '18:00'),
-  4 => array(name => 'Noche', start => '18:00', end => '24:00'));
-$my_error = "";
+    2 => array(name => 'Mañana', start => '06:00', end => '12:00'),
+    3 => array(name => 'Tarde', start => '12:00', end => '18:00'),
+    4 => array(name => 'Noche', start => '18:00', end => '24:00'));
 
   // check if the form has been submitted
   if (isset($_POST['submitted'])) {
@@ -242,15 +241,15 @@ $my_error = "";
     $day = safeEscapeString($_POST["day"]);
     $year = safeEscapeString($_POST["year"]);
 
-    $unknown_time = isset($_POST["unknown-time"]);
+    $unknown_time = isset($_POST["unknown-time"]) ? 1 : 0;
     $time_range = safeEscapeString($_POST["time-window"]);
 
     $hour = safeEscapeString($_POST["hour"]);
     $minute = safeEscapeString($_POST["minute"]);
 
-    $country = safeEscapeString($_POST["country"]);
-    $state = safeEscapeString($_POST["state"]);
-    $city = safeEscapeString($_POST["city"]);
+    $country = safeEscapeString($_POST["selected-country"]);
+    $state = safeEscapeString($_POST["selected-state"]);
+    $city = safeEscapeString($_POST["selected-city"]);
     
     $position = Get_Geo_Position($city, $state, $country);
 
@@ -266,70 +265,36 @@ $my_error = "";
 
     $my_form->check_4html = true;
 
-    $my_form->add_text_field("Name", $name, "text", true, 40);
-    $my_form->add_text_field("Gender", $gender, "text", true);
+    $my_form->add_text_field("Name", $name, true, 40);
+    $my_form->add_text_field("Gender", $gender, true);
 
-    $my_form->add_text_field("Month", $month, "text", true, 2);
-    $my_form->add_text_field("Day", $day, "text", true, 2);
-    $my_form->add_text_field("Year", $year, "text", true, 4);
+    $my_form->add_num_field("Month", $month, true, 1, 12);
+    $my_form->add_num_field("Day", $day, true, 1, 31);
+    $my_form->add_num_field("Year", $year, true, 1900, 2100);
 
-    $my_form->add_text_field("Hour", $hour, "text", !$unknown_time, 2);
-    $my_form->add_text_field("Minute", $minute, "text", !$unknown_time, 2);
-    $my_form->add_text_field("Time range", $time_range, "text", $unknown_time);
+    $my_form->add_num_field("Hour", $hour, !$unknown_time, 0, 23);
+    $my_form->add_num_field("Minute", $minute, !$unknown_time, 0, 59);
+    $my_form->add_text_field("Time range", $time_range, $unknown_time);
 
-    $my_form->add_text_field("Time zone", $timezone, "text", true, 4);
+    $my_form->add_text_field("Time zone", $timezone, true, 4);
 
-    $my_form->add_text_field("Country", $country, "text", true);
-    $my_form->add_text_field("State", $state, "text", true);
-    $my_form->add_text_field("City", $city, "text", true);
-
-    // additional error checks on user-entered data
-    if ($gender != "male" and $gender != "female") {
-      $my_error .= "Por favor seleccione su género.<br>";
-    }
-
-    if ($month != "" And $day != "" And $year != "")
-    {
-      if (!$date = checkdate(settype ($month, "integer"), settype ($day, "integer"), settype ($year, "integer")))
-      {
-        $my_error .= "La fecha de nacimiento ingresada no es válida.<br>";
-      }
-    }
-
-    if (($year < 1900) Or ($year >= 2100))
-    {
-      $my_error .= "Por favor ingrese un año entre 1900 y 2099.<br>";
-    }
-
-    if (($hour < 0) Or ($hour > 23))
-    {
-      $my_error .= "La hora de nacimiento debe ser entre 0 y 23.<br>";
-    }
-
-    if (($minute < 0) Or ($minute > 59))
-    {
-      $my_error .= "Los minutos de nacimiento deben ser entre 0 y 59.<br>";
-    }
+    $my_form->add_text_field("Country", $country, true);
+    $my_form->add_text_field("State", $state, !empty($country));
+    $my_form->add_text_field("City", $city, !empty($state));
 
     if (is_null($position))
     {
-      $my_error .= "Hubo un error al procesar su ubicación.<br>";
+      $my_error = "Hubo un error al procesar su ubicación.<br>";
     }
 
     $validation_error = $my_form->validation();
 
     if ((!$validation_error) || ($my_error != ""))
     {
-      $error = $my_form->create_msg();
       echo "<h3>Hay errores en su formulario:</h3>";
 
-      if ($error)
-      {
-        echo $error . $my_error;
-      }
-      else
-      {
-        echo $error . "<br>" . $my_error . "<br>";
+      if ($my_error) {
+        echo "$my_error <br>";
       }
     }
     else
@@ -798,7 +763,9 @@ $my_error = "";
       </td>
 
       <td>
-        <input size="40" name="name" value="<?php echo $_POST['name']; ?>"/>
+        <input type="text" size="40" name="name" 
+          value="<?php echo $_POST['name']; ?>" 
+          class="<?php echo $my_form->errors['Name'] ? 'invalid' : ''; ?>" />
       </td>
     </TR>
 
@@ -809,9 +776,13 @@ $my_error = "";
 
       <td>
         <div>
-          <input value="female" name="gender" type="radio" <?php echo ($_POST['gender']=='female') ? 'checked' : ''; ?> />
+          <input value="female" name="gender" type="radio"
+            class="<?php echo $my_form->errors['Gender'] ? 'invalid' : ''; ?>"
+            <?php echo ($_POST['gender']=='female') ? 'checked' : ''; ?> />
           <label for="female-gender">Femenino</label>
-          <input value="male" name="gender" type="radio" <?php echo ($_POST['gender']=='male') ? 'checked' : ''; ?> />
+          <input value="male" name="gender" type="radio" 
+            class="<?php echo $my_form->errors['Gender'] ? 'invalid' : ''; ?>"
+            <?php echo ($_POST['gender']=='male') ? 'checked' : ''; ?> />
           <label for="male-gender">Masculino</label>
         </div>
       </td>
@@ -823,10 +794,12 @@ $my_error = "";
       </TD>
 
       <TD>
-        <input size="2" maxlength="2" name="day" value="<?php echo $_POST['day']; ?>"/>
+        <input type="number" size="2" maxlength="2" name="day" 
+          class="<?php echo $my_form->errors['Day'] ? 'invalid' : ''; ?>"
+          value="<?php echo $_POST['day']; ?>"/>
 
+        <select name="month" class="<?php echo $my_form->errors['Month'] ? 'invalid' : ''; ?>">
         <?php
-        echo '<select name="month">';
         foreach ($months as $key => $value)
         {
           echo "<option value=\"$key\"";
@@ -836,10 +809,12 @@ $my_error = "";
           }
           echo ">$value</option>\n";
         }
-        echo '</select>';
         ?>
+        </select>
 
-        <input size="4" maxlength="4" name="year" value="<?php echo $_POST['year']; ?>"/>
+        <input type="number" size="4" maxlength="4" name="year"
+          class="<?php echo $my_form->errors['Year'] ? 'invalid' : ''; ?>"
+          value="<?php echo $_POST['year']; ?>"/>
         (Solo los años de 1900 hasta 2099 son válidos)
      </TD>
     </TR>
@@ -848,11 +823,15 @@ $my_error = "";
       <td valign="top"><P align="right">Horario de Nacimiento:</P></td>
       <td>
         <div id="known-time-wrapper">
-          <input maxlength="2" size="2" name="hour" value="<?php echo $_POST['hour']; ?>"/>
-          <input maxlength="2" size="2" name="minute" value="<?php echo $_POST['minute']; ?>"/>
+          <input type="number" maxlength="2" size="2" name="hour"
+            class="<?php echo $my_form->errors['Hour'] ? 'invalid' : ''; ?>"
+            value="<?php echo $_POST['hour']; ?>"/>
+          <input type="number" maxlength="2" size="2" name="minute" 
+            class="<?php echo $my_form->errors['Minute'] ? 'invalid' : ''; ?>"
+            value="<?php echo $_POST['minute']; ?>"/>
         </div>
         <div id="unknown-time-wrapper">
-          <select class="time-window" name="time-window">
+          <select id="time-window" name="time-window" class="<?php echo $my_form->errors['Time range'] ? 'invalid' : ''; ?>">
             <option value="" selected>Elegí un rango horario aproximado</option>
             <?php
             foreach ($timeWindows as $key => $value) {
@@ -874,7 +853,7 @@ $my_error = "";
     <TR>
       <td valign="top"><P align="right">Pais:</P></td>
       <td>
-        <select class="country" name="country">
+        <select id="country" name="country" class="<?php echo $my_form->errors['Country'] ? 'invalid' : ''; ?>">
           <option>Seleccione el pais</option>
           <?php
             require('lib/get_countries.php');
@@ -889,27 +868,27 @@ $my_error = "";
             }
           ?>
         </select>
-        <input type="hidden" id="selected-country" name="selected-country" value="<?php echo $_POST['country']; ?>" />
+        <input type="hidden" id="selected-country" name="selected-country" value="<?php echo $country; ?>" />
       </td>
     </TR>
 
     <TR id="state-input">
       <td valign="top"><P align="right">Estado/Provincia:</P></td>
       <td>
-        <select class="state" name="state">
+        <select id="state" name="state" class="<?php echo $my_form->errors['State'] ? 'invalid' : ''; ?>">
           <option>Seleccione el estado/provincia</option>
         </select>
-        <input type="hidden" id="selected-state" name="selected-state" value="<?php echo $_POST['state']; ?>" />
+        <input type="hidden" id="selected-state" name="selected-state" value="<?php echo $state; ?>" />
       </td>
     </TR>
 
     <TR id="city-input">
       <td valign="top"><P align="right">Ciudad:</P></td>
       <td>
-        <select class="city" name="city">
+        <select id="city" name="city" class="<?php echo $my_form->errors['City'] ? 'invalid' : ''; ?>">
           <option>Seleccione la ciudad</option>
         </select>
-        <input type="hidden" id="selected-city" name="selected-city" value="<?php echo $_POST['city']; ?>" />
+        <input type="hidden" id="selected-city" name="selected-city" value="<?php echo $city; ?>" />
       </td>
     </TR>
 
