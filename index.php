@@ -484,17 +484,6 @@ $timeWindows = array(1 => array(name => 'Madrugada', start => '00:00', end => '0
       echo '<center><table width="61.8%" cellpadding="0" cellspacing="0" border="0">';
       echo '<tr><td>';
 
-      if (!$unknown_time) {
-        //display rising sign interpretation
-        //get header first
-        echo "<h2>EL SIGNO ASCENDENTE</h2>";
-        echo "<p>" . read_from_file("$base_dir/ascendant.txt", "ascendant_description") . "</p>";
-
-        $s_pos = longitude_to_sign($planets['Ascendant']['longitude']);
-
-        echo "<p>" . read_from_file("$base_dir/ascendant.txt", "ascendant_".$s_pos."_$gender") . "</p>";
-      }
-
       //display planet in sign interpretation
       //get header first
       echo "<h2>EL SOL Y LA LUNA</h2>";
@@ -521,6 +510,17 @@ $timeWindows = array(1 => array(name => 'Madrugada', start => '00:00', end => '0
       }
 
       echo "<p>" . $sign_interp . "</p>";
+
+      if (!$unknown_time) {
+        //display rising sign interpretation
+        //get header first
+        echo "<h2>EL SIGNO ASCENDENTE</h2>";
+        echo "<p>" . read_from_file("$base_dir/ascendant.txt", "ascendant_description") . "</p>";
+
+        $s_pos = longitude_to_sign($planets['Ascendant']['longitude']);
+
+        echo "<p>" . read_from_file("$base_dir/ascendant.txt", "ascendant_".$s_pos."_$gender") . "</p>";
+      }
 
       /*
       if (!$unknown_time)
