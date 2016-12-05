@@ -549,7 +549,7 @@ $my_error = "";
         if ($unknown_time and strcmp('Moon', $key) == 0 and count($moon_signs) > 1)
         {
           //if the Moon changed during the time range entered, don't include it in the report
-          $sign_interp .= "<b>La luna en tu carta natal</b><br><br>No podemos darte datos certeros sobre tu luna, ya que en el rango horario que ingresaste, la luna pasó del signo <b>$moon_signs[0]</b> al signo <b>$moon_signs[1]</b>. Te recomendamos que busques tu horario de nacimiento para que puedas saber en qué signo se encontraba la luna en el momento en que naciste.<br>";
+          $sign_interp .= "<b>La Luna en tu carta natal</b><br><br>No podemos darte datos certeros sobre tu Luna, ya que en el rango horario que ingresaste, la Luna pasó del signo <b>$moon_signs[0]</b> al signo <b>$moon_signs[1]</b>. Te recomendamos que busques tu horario de nacimiento para que puedas saber en qué signo se encontraba la Luna en el momento en que naciste.<br>";
         } else  {
           $sign_interp .= read_from_file($file_name, $p_name."_".$s_pos."_".$gender);
         }
@@ -889,6 +889,7 @@ $my_error = "";
             }
           ?>
         </select>
+        <input type="hidden" id="selected-country" name="selected-country" value="<?php echo $_POST['country']; ?>" />
       </td>
     </TR>
 
@@ -896,8 +897,9 @@ $my_error = "";
       <td valign="top"><P align="right">Estado/Provincia:</P></td>
       <td>
         <select class="state" name="state">
-          <option value="<?php echo $_POST['state']; ?>" selected>Seleccione el estado/provincia</option>
+          <option>Seleccione el estado/provincia</option>
         </select>
+        <input type="hidden" id="selected-state" name="selected-state" value="<?php echo $_POST['state']; ?>" />
       </td>
     </TR>
 
@@ -905,8 +907,9 @@ $my_error = "";
       <td valign="top"><P align="right">Ciudad:</P></td>
       <td>
         <select class="city" name="city">
-          <option value="<?php echo $_POST['city']; ?>" selected>Seleccione la ciudad</option>
+          <option>Seleccione la ciudad</option>
         </select>
+        <input type="hidden" id="selected-city" name="selected-city" value="<?php echo $_POST['city']; ?>" />
       </td>
     </TR>
 
