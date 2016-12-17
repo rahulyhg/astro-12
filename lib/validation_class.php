@@ -251,21 +251,21 @@ class Validate_fields {
 		}
 	}
 
-	function check_email($mail_address, $field, $req = true) {
-		if ($mail_address == "") {
-			if ($req) {
-				$this->messages[] = $this->error_text(1, $field);
-				return false;
-			} else {
-				return true;
-			}
+	function check_email($email_address, $field, $required = true) {
+		if (empty($email_address) && !$required) {
+			return true;
+		}
+
+		if (empty($email_address)) {
+			$this->errors[$field] = $field;
+			return false;
+		}
+
+		if (filter_var($email_address, FILTER_VALIDATE_EMAIL)) {
+			return true;
 		} else {
-			if (preg_match("/^[0-9a-z]+(([\.\-_])[0-9a-z]+)*@[0-9a-z]+(([\.\-])[0-9a-z-]+)*\.[a-z]{2,4}$/i", strtolower($mail_address))) {
-				return true;
-			} else {
-				$this->messages[] = $this->error_text(11, $field);
-				return false;
-			}
+			$this->errors[$field] = $field;
+			return false;
 		}
 	}
 
