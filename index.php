@@ -170,6 +170,7 @@ $timeWindows = array(1 => array(name => 'Madrugada', start => '00:00', end => '0
     {
       $user = [];
       $user["name"] = $name;
+      $user["email"] = $email;
       $user["gender"] = $gender;
       $user["day"] = $day;
       $user["month"] = $month;
