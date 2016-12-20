@@ -22,7 +22,7 @@ $(function() {
 
     var countryCode = $("#selected-country").val();
 
-    if (!!countryCode) {
+    if (!!countryCode && SELECTED_LOCATION_PATTERN.test(countryCode)) {
       var selectedState = $("#selected-state").val();
       getStates(countryCode, function() { 
         if (!!selectedState) {

@@ -1,12 +1,12 @@
 <?php
-include(dirname(__FILE__)."/location.php");
 header('Content-Type: text/html; charset=ISO-8859-1');
+include(dirname(__FILE__)."/location.php");
 
 if($_POST['countryCode'] && $_POST['state'])
 {
-  $country_code = split(':', $_POST['countryCode'])[0];
-  $state = split(':', $_POST['state'])[0];
-  $cities = $location->get_cities($country_code, $state);
+  $state_id = trim(split(':', $_POST['state'])[0]);
+  $state_name = trim(split(':', $_POST['state'])[1]);
+  $cities = $location->get_cities($state_id, $state_name);
 
   ?>
   <option selected>Selecciona una ciudad:</option>

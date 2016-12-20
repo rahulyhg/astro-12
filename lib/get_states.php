@@ -4,8 +4,9 @@ include(dirname(__FILE__)."/location.php");
 
 if($_POST['countryCode'])
 {
-  $country_code = split(':', $_POST['countryCode'])[0];
-  $states = $location->get_states($country_code);
+  $country_code = trim(split(':', $_POST['countryCode'])[0]);
+  $country_name = trim(split(':', $_POST['countryCode'])[1]);
+  $states = $location->get_states($country_code, $country_name);
 
   ?>
   <option selected>Selecciona un estado:</option>

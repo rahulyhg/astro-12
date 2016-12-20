@@ -303,18 +303,8 @@ $timeWindows = array(1 => array(name => 'Madrugada', start => '00:00', end => '0
         <td valign="top"><P align="right">Pais:</P></td>
         <td>
           <select id="country" name="country" class="<?php echo $my_form->errors['Country'] ? 'invalid' : ''; ?>">
-            <option>Seleccione el pais</option>
             <?php
               require('lib/get_countries.php');
-
-              foreach ($countries as $key => $value) {
-                echo "<option value=\"$value[code]:$value[name]\"";
-                if ($value['code'].':'.$value['name'] == $country)
-                {
-                  echo ' selected="selected"';
-                }
-                echo ">$value[name]</option>\n";
-              }
             ?>
           </select>
           <input type="hidden" id="selected-country" name="selected-country" value="<?php echo $country; ?>" />
